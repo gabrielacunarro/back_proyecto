@@ -39,7 +39,7 @@ const productManager = new ProductManager();
 productManager.create({
     title: "N°5 CHANEL",
     photo: "assets/chaneln5.png",
-    //price: 118000,
+    price: 118000,
     stock: 250
 });
 
