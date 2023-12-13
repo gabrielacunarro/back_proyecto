@@ -1,18 +1,28 @@
 class ProductManager {
     static #products = [];
 
-    create(data) {
+    #verifyRequiredProps(data) {
         const requiredProps = ["title", "photo", "price", "stock"];
-
-        // verifico si estan todas las propiedades de cada producto, caso contrario arrojo un advertencia/error de creacion de art.
         const missingProps = requiredProps.filter(prop => !(prop in data));
+        return missingProps;
+    }
+
+    #generateProductId() {
+        return ProductManager.#products.length === 0 ? 1 : ProductManager.#products[ProductManager.#products.length - 1].id + 1;
+    }
+
+    #generateWarningMessage(missingProps, title) {
+        const missingMessages = missingProps.map(prop => `The product has not been created as the "${prop}" property is missing for "${title}".`);
+        return `Warning: ${missingMessages.join(". ")}`;
+    }
+
+    create(data) {
+        const missingProps = this.#verifyRequiredProps(data);
 
         if (missingProps.length > 0) {
-            const missingMessages = missingProps.map(prop => `The product has not been created as the "${prop}" property is missing for "${data.title}".`);
-            console.log(`Warning: ${missingMessages.join(". ")}`);
-
+            console.log(this.#generateWarningMessage(missingProps, data.title));
         } else {
-            const id = ProductManager.#products.length === 0 ? 1 : ProductManager.#products[ProductManager.#products.length - 1].id + 1;
+            const id = this.#generateProductId();
 
             const product = {
                 id,

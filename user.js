@@ -1,19 +1,29 @@
 class UserManager {
     #users = [];
-    
-    create(data) {
-        const requiredProps = ["name", "photo", "email"];
 
-        //  verifico si estan todas las propiedades de cada user, caso contrario arrojo un advertencia/error de creacion del mismo
+    #verifyRequiredProps(data) {
+        const requiredProps = ["name", "photo", "email"];
         const missingProps = requiredProps.filter(prop => !(prop in data) || data[prop] === undefined);
+        return missingProps;
+    }
+
+    #generateUserId() {
+        return this.#users.length === 0 ? 1 : this.#users[this.#users.length - 1].id + 1;
+    }
+
+    #generateWarningMessage(missingProps) {
+        const missingMessages = missingProps.map(prop => `The user has not been created as the "${prop}" property is missing.`);
+        return `Warning: ${missingMessages.join(". ")}`;
+    }
+
+    create(data) {
+        const missingProps = this.#verifyRequiredProps(data);
 
         if (missingProps.length > 0) {
-            const missingMessages = missingProps.map(prop => `The user has not been created as the "${prop}" property is missing.`);
-            console.log(`Warning: ${missingMessages.join(". ")}`);
-            
+            console.log(this.#generateWarningMessage(missingProps));
         } else {
             const user = {
-                id: this.#users.length === 0 ? 1 : this.#users[this.#users.length - 1].id + 1,
+                id: this.#generateUserId(),
                 name: data.name,
                 photo: data.photo,
                 email: data.email
@@ -54,5 +64,4 @@ userManager.create({
 });
 
 console.log("Users:", userManager.read());
-console.log("User with id 2:", userManager.readOne(2));
-
+console.log("User with id 2:", userManager.readOne(1));
