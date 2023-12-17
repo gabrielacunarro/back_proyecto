@@ -1,5 +1,13 @@
+const fs = require('fs').promises;
+const path = require('path');
+
 class ProductManager {
+    static #productsFile = path.resolve(__dirname, 'data', 'products.json');
     static #products = [];
+
+    constructor() {
+        this.loadProducts();
+    }
 
     #verifyRequiredProps(data) {
         const requiredProps = ["title", "photo", "price", "stock"];
@@ -16,7 +24,7 @@ class ProductManager {
         return `Warning: ${missingMessages.join(". ")}`;
     }
 
-    create(data) {
+    async create(data) {
         const missingProps = this.#verifyRequiredProps(data);
 
         if (missingProps.length > 0) {
@@ -33,6 +41,19 @@ class ProductManager {
             };
 
             ProductManager.#products.push(product);
+
+            try {
+                await fs.access(dataFolder);
+            } catch (error) {
+                // Si la carpeta no existe, la crea
+                try {
+                    await fs.mkdir(dataFolder);
+                } catch (mkdirError) {
+                    console.error('Error creating folder:', mkdirError.message);
+                }
+            }
+
+            await this.saveProducts();
         }
     }
 
@@ -43,16 +64,46 @@ class ProductManager {
     readOne(id) {
         return ProductManager.#products.find(product => product.id === Number(id));
     }
+
+    async loadProducts() {
+        try {
+            const data = await fs.readFile(ProductManager.#productsFile, 'utf8');
+            if (data.trim() === '') {
+                // Inicializo #products como un array vacío
+                ProductManager.#products = [];
+            } else {
+                ProductManager.#products = JSON.parse(data);
+            }
+        } catch (error) {
+            // Manejo error creando un prod vacío
+            console.error('Error loading products:', error.message);
+            ProductManager.#products = [];
+        }
+    }
+
+    async saveProducts() {
+        try {
+            const data = JSON.stringify(ProductManager.#products, null, 2);
+            await fs.writeFile(ProductManager.#productsFile, data, 'utf8');
+        } catch (error) {
+            console.error('Error saving products:', error.message);
+        }
+    }
 }
 
+// Carpeta 'data' para almacenar el archivo JSON
+const dataFolder = path.join(__dirname, 'data');
+
+// Instancia de ProductManager
 const productManager = new ProductManager();
+
+// Crea un producto de ejemplo
 productManager.create({
     title: "N°5 CHANEL",
     photo: "assets/chaneln5.png",
     price: 118000,
     stock: 250
 });
-
 productManager.create({
     title: "Blue Seduction",
     photo: "assets/BlueSeduction.png",
@@ -76,3 +127,6 @@ productManager.create({
 
 console.log("Products:", productManager.read());
 console.log("Product with ID 1", productManager.readOne(1));
+
+
+
