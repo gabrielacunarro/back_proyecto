@@ -45,6 +45,8 @@ class UserManager {
                 }
             }
 
+            // Llama a saveUsers después de cargar los usuarios
+            await this.loadUsers();
             await this.saveUsers();
         }
     }
@@ -83,9 +85,10 @@ class UserManager {
     }
 }
 
-// creo la carp 'data' para almacenar el archivo JSON
+// Creo la carpeta 'data' para almacenar el archivo JSON
 const dataFolder = path.join(__dirname, 'data');
 
+// Creación de usuarios
 const userManager = new UserManager();
 
 userManager.create({

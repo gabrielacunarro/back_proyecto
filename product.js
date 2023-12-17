@@ -94,10 +94,10 @@ class ProductManager {
 // Carpeta 'data' para almacenar el archivo JSON
 const dataFolder = path.join(__dirname, 'data');
 
-// Instancia de ProductManager
+
 const productManager = new ProductManager();
 
-// Crea un producto de ejemplo
+//creacion de products
 productManager.create({
     title: "N°5 CHANEL",
     photo: "assets/chaneln5.png",
