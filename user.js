@@ -1,37 +1,109 @@
-class UserManager {
-    #users = [];
-    
-    create(data) {
-        const requiredProps = ["name", "photo", "email"];
+const fs = require('fs').promises;
+const path = require('path');
+const crypto = require('crypto');
 
-        //  verifico si estan todas las propiedades de cada user, caso contrario arrojo un advertencia/error de creacion del mismo
+class UserManager {
+    static #usersFile = path.resolve(__dirname, 'data', 'users.json');
+    static #users = [];
+
+    #verifyRequiredProps(data) {
+        const requiredProps = ["name", "photo", "email"];
         const missingProps = requiredProps.filter(prop => !(prop in data) || data[prop] === undefined);
+        return missingProps;
+    }
+
+    #generateUserId() {
+        const idGenerator = crypto.createHash('sha256');
+        idGenerator.update(`${Date.now()}-${Math.random()}`);
+        return idGenerator.digest('hex').slice(0, 8);
+    }
+
+    #generateWarningMessage(missingProps) {
+        const missingMessages = missingProps.map(prop => `The user has not been created as the "${prop}" property is missing.`);
+        return `Warning: ${missingMessages.join(". ")}`;
+    }
+
+    async create(data) {
+        const missingProps = this.#verifyRequiredProps(data);
 
         if (missingProps.length > 0) {
-            const missingMessages = missingProps.map(prop => `The user has not been created as the "${prop}" property is missing.`);
-            console.log(`Warning: ${missingMessages.join(". ")}`);
-            
+            console.log(this.#generateWarningMessage(missingProps));
         } else {
+            const id = this.#generateUserId();
+
             const user = {
-                id: this.#users.length === 0 ? 1 : this.#users[this.#users.length - 1].id + 1,
+                id,
                 name: data.name,
                 photo: data.photo,
                 email: data.email
             };
-            this.#users.push(user);
+
+            UserManager.#users.push(user);
+
+            try {
+                await fs.access(dataFolder);
+            } catch (error) {
+                // Si la carpeta no existe, la crea
+                try {
+                    await fs.mkdir(dataFolder);
+                } catch (mkdirError) {
+                    console.error('Error creating folder:', mkdirError.message);
+                }
+            }
+
+            // Llama a saveUsers después de cargar los usuarios
+            await this.loadUsers();
+            await this.saveUsers();
         }
     }
 
     read() {
-        return this.#users;
+        return UserManager.#users;
     }
 
-    readOne(id) {
-        return this.#users.find(user => user.id === Number(id));
+    readOne(index) {
+        const userIndex = index !== undefined ? index - 1 : 0;
+        const user = UserManager.#users[userIndex];
+    
+        if (!user) {
+            console.log(`User at position ${index || 1}: not found!`);
+        }
+    
+        return user || null;
+    } 
+
+    async loadUsers() {
+        try {
+            const data = await fs.readFile(UserManager.#usersFile, 'utf8');
+            if (data.trim() === '') {
+                // Inicializo #users como un array vacío
+                UserManager.#users = [];
+            } else {
+                UserManager.#users = JSON.parse(data);
+            }
+        } catch (error) {
+            // Manejo de error creando un user vacío
+            console.error('Error loading users:', error.message);
+            UserManager.#users = [];
+        }
+    }
+
+    async saveUsers() {
+        try {
+            const data = JSON.stringify(UserManager.#users, null, 2);
+            await fs.writeFile(UserManager.#usersFile, data, 'utf8');
+        } catch (error) {
+            console.error('Error saving users:', error.message);
+        }
     }
 }
 
+// Creo la carpeta 'data' para almacenar el archivo JSON
+const dataFolder = path.join(__dirname, 'data');
+
+// Creación de usuarios
 const userManager = new UserManager();
+
 userManager.create({
     name: "Alejandro Perez",
     photo: "Alejandro.jpg",
@@ -42,11 +114,13 @@ userManager.create({
     photo: "Federico.jpg",
     email: "federico_suarez@gmail.com"
 });
+
 userManager.create({
     name: "Ana De Luca",
     photo: "Ana.jpg",
     email: "ana_deluca@gmail.com"
 });
+
 userManager.create({
     name: "Maria Sosa",
     photo: "Maria.jpg",
@@ -54,5 +128,7 @@ userManager.create({
 });
 
 console.log("Users:", userManager.read());
-console.log("User with id 2:", userManager.readOne(2));
+console.log("User with ID 1:", userManager.readOne(1));
+
+
 
