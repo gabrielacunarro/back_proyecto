@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
 
 class ProductManager {
     static #productsFile = path.resolve(__dirname, 'data', 'products.json');
@@ -16,7 +17,9 @@ class ProductManager {
     }
 
     #generateProductId() {
-        return ProductManager.#products.length === 0 ? 1 : ProductManager.#products[ProductManager.#products.length - 1].id + 1;
+        const idGenerator = crypto.createHash('sha256');
+        idGenerator.update(`${Date.now()}-${Math.random()}`);
+        return idGenerator.digest('hex').slice(0, 8);
     }
 
     #generateWarningMessage(missingProps, title) {
@@ -61,9 +64,16 @@ class ProductManager {
         return ProductManager.#products;
     }
 
-    readOne(id) {
-        return ProductManager.#products.find(product => product.id === Number(id));
+    readOne(index) {
+        const product = ProductManager.#products[index - 1]; // Restamos 1 porque los índices de arrays comienzan en 0
+
+        if (!product) {
+            console.log("Product not found!");
+        }
+
+        return product || null;
     }
+
 
     async loadProducts() {
         try {
@@ -94,10 +104,9 @@ class ProductManager {
 // Carpeta 'data' para almacenar el archivo JSON
 const dataFolder = path.join(__dirname, 'data');
 
-
 const productManager = new ProductManager();
 
-//creacion de products
+// Creación de productos
 productManager.create({
     title: "N°5 CHANEL",
     photo: "assets/chaneln5.png",
@@ -127,6 +136,7 @@ productManager.create({
 
 console.log("Products:", productManager.read());
 console.log("Product with ID 1", productManager.readOne(1));
+
 
 
 

@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const crypto = require('crypto');
 
 class UserManager {
     static #usersFile = path.resolve(__dirname, 'data', 'users.json');
@@ -12,7 +13,9 @@ class UserManager {
     }
 
     #generateUserId() {
-        return UserManager.#users.length === 0 ? 1 : UserManager.#users[UserManager.#users.length - 1].id + 1;
+        const idGenerator = crypto.createHash('sha256');
+        idGenerator.update(`${Date.now()}-${Math.random()}`);
+        return idGenerator.digest('hex').slice(0, 8);
     }
 
     #generateWarningMessage(missingProps) {
@@ -26,12 +29,15 @@ class UserManager {
         if (missingProps.length > 0) {
             console.log(this.#generateWarningMessage(missingProps));
         } else {
+            const id = this.#generateUserId();
+
             const user = {
-                id: this.#generateUserId(),
+                id,
                 name: data.name,
                 photo: data.photo,
                 email: data.email
             };
+
             UserManager.#users.push(user);
 
             try {
@@ -55,9 +61,16 @@ class UserManager {
         return UserManager.#users;
     }
 
-    readOne(id) {
-        return UserManager.#users.find(user => user.id === Number(id));
-    }
+    readOne(index) {
+        const userIndex = index !== undefined ? index - 1 : 0;
+        const user = UserManager.#users[userIndex];
+    
+        if (!user) {
+            console.log(`User at position ${index || 1}: not found!`);
+        }
+    
+        return user || null;
+    } 
 
     async loadUsers() {
         try {
@@ -116,4 +129,6 @@ userManager.create({
 
 console.log("Users:", userManager.read());
 console.log("User with ID 1:", userManager.readOne(1));
+
+
 
